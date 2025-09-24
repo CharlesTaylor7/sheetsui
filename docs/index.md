@@ -7,10 +7,10 @@
 Currently this will print out:
 
 ```sh
-Usage: sheetui [OPTIONS] <WORKBOOK>
+Usage: sheetui [OPTIONS] [WORKBOOK]
 
 Arguments:
-  <WORKBOOK>
+  [WORKBOOK]
 
 Options:
   -l, --locale-name <LOCALE_NAME>      [default: en]
@@ -19,6 +19,8 @@ Options:
   -h, --help                           Print help
   -V, --version                        Print version
 ```
+
+If you do not provide a workbook path, sheetui will open an empty workbook.
 
 ## Supported formats
 
