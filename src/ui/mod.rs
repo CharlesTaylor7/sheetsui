@@ -881,6 +881,18 @@ impl<'ws> Workspace<'ws> {
                         self.state.char_queue.push('g');
                     }
                 }
+                KeyCode::Char('o') => {
+                    self.book.insert_rows(self.book.location.row+1, 1)?;
+                    self.move_down()?;
+                    self.handle_movement_change();
+                    self.enter_edit_mode();
+                },
+                KeyCode::Char('O') => {
+                    self.book.insert_rows(self.book.location.row, 1)?;
+                    self.move_up()?;
+                    self.handle_movement_change();
+                    self.enter_edit_mode();
+                },
                 _ => {
                     // noop
                     self.state.char_queue.clear();
