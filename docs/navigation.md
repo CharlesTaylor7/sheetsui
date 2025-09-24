@@ -32,6 +32,8 @@ will clear the numeric prefix if you want to cancel it.
 * 'I' will toggle italic on the cell. 'B' will toggle bold.
 * `Ctrl-h` will shorten the width of the column you are on.
 * `Ctrl-l` will lengthen the width of the column you are on.
+* `o` will insert a row below the selected cell, move one cell down, and enter edit mode
+* `O` will insert a row above the selected cell, move one cell up, and enter edit mode
 
 ## Other Keybindings
 
