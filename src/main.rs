@@ -15,7 +15,7 @@ mod ui;
 #[command(version, about, long_about = None)]
 pub struct Args {
     #[arg()]
-    workbook: PathBuf,
+    workbook: Option<PathBuf>,
     #[arg(default_value_t=String::from("en"), short, long)]
     locale_name: String,
     #[arg(default_value_t=String::from("America/New_York"), short, long)]
@@ -27,7 +27,11 @@ pub struct Args {
 type ReadFn = Box<dyn FnMut() -> anyhow::Result<event::Event>>;
 
 fn run(terminal: &mut ratatui::DefaultTerminal, args: Args) -> anyhow::Result<ExitCode> {
-    let mut ws = Workspace::load(&args.workbook, &args.locale_name, &args.timezone_name)?;
+    let mut ws = if let Some(workbook_path) = &args.workbook {
+        Workspace::load(workbook_path, &args.locale_name, &args.timezone_name)?
+    } else {
+        Workspace::new_empty(&args.locale_name, &args.timezone_name)?
+    };
     let mut read_func: ReadFn = if let Some(log_path) = args.log_input {
         {
             let log_file = std::fs::File::create(log_path)?;
