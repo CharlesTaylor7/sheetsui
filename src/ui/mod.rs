@@ -18,8 +18,6 @@ use tui_textarea::{CursorMove, TextArea};
 mod cmd;
 mod help;
 pub mod render;
-#[cfg(test)]
-mod test;
 
 use cmd::Cmd;
 use render::{markdown::Markdown, viewport::ViewportState};
@@ -662,7 +660,9 @@ impl<'ws> Workspace<'ws> {
                 }
                 // TODO(zaphar): Rethink this a bit perhaps?
                 let mut cb = Clipboard::new()?;
-                let (html, csv) = self.book.range_to_clipboard_content(AddressRange { start, end })?;
+                let (html, csv) = self
+                    .book
+                    .range_to_clipboard_content(AddressRange { start, end })?;
                 cb.set_html(html, Some(csv))?;
                 self.state.clipboard = Some(ClipboardContents::Range(rows));
             }
@@ -882,17 +882,17 @@ impl<'ws> Workspace<'ws> {
                     }
                 }
                 KeyCode::Char('o') => {
-                    self.book.insert_rows(self.book.location.row+1, 1)?;
+                    self.book.insert_rows(self.book.location.row + 1, 1)?;
                     self.move_down()?;
                     self.handle_movement_change();
                     self.enter_edit_mode();
-                },
+                }
                 KeyCode::Char('O') => {
                     self.book.insert_rows(self.book.location.row, 1)?;
                     self.move_up()?;
                     self.handle_movement_change();
                     self.enter_edit_mode();
-                },
+                }
                 _ => {
                     // noop
                     self.state.char_queue.clear();

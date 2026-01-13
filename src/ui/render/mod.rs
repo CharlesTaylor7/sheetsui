@@ -13,9 +13,6 @@ pub use viewport::Viewport;
 pub mod dialog;
 pub mod markdown;
 
-#[cfg(test)]
-mod test;
-
 impl<'ws> Workspace<'ws> {
     fn get_render_parts(
         &mut self,

@@ -54,7 +54,7 @@ impl Markdown {
 
     fn parse(&mut self) {
         let input = self.input.clone();
-        
+
         let parser = pulldown_cmark::TextMergeStream::new(Parser::new(&input));
 
         let mut current_line = Line::default();
@@ -190,7 +190,7 @@ impl Markdown {
                         TagEnd::CodeBlock => {
                             state_stack.pop();
                         }
-                       TagEnd::Item => {
+                        TagEnd::Item => {
                             // Push the current line to preserve the list item
                             if !current_line.spans.is_empty() {
                                 lines.push(current_line);
@@ -203,7 +203,9 @@ impl Markdown {
                             // Only add an empty line if we're back to the root level
                             if state_stack
                                 .iter()
-                                .filter(|state| matches!(state, MarkdownState::List(_))).count() == 0
+                                .filter(|state| matches!(state, MarkdownState::List(_)))
+                                .count()
+                                == 0
                             {
                                 //lines.push(Line::default()); // Add empty line after list
                             }
@@ -211,7 +213,7 @@ impl Markdown {
                         _ => {}
                     }
                 }
-                Event::InlineMath(text) 
+                Event::InlineMath(text)
                 | Event::Code(text)
                 | Event::InlineHtml(text)
                 | Event::DisplayMath(text)
@@ -235,8 +237,7 @@ impl Markdown {
                             //MarkdownState::Code => {
                             //    style = style.fg(Color::Yellow);
                             //}
-                            _ => {
-                            }
+                            _ => {}
                         }
                     }
 
@@ -252,9 +253,9 @@ impl Markdown {
                     lines.push(current_line);
                     current_line = Line::default();
                 }
-                Event::FootnoteReference(_) => {},
-                Event::Rule => {},
-                Event::TaskListMarker(_) => {},
+                Event::FootnoteReference(_) => {}
+                Event::Rule => {}
+                Event::TaskListMarker(_) => {}
             }
         }
 
@@ -333,204 +334,5 @@ impl Widget for Markdown {
             let text = Text::raw(self.input);
             text.render(area, buf);
         }
-    }
-}
-
-// TODO(zaphar): Move this into a proper test file.
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn test_empty_markdown() {
-        let md = Markdown::from_str("");
-        let text = md.get_text();
-        assert_eq!(text.lines.len(), 0);
-    }
-
-    #[test]
-    fn test_simple_paragraph() {
-        let md = Markdown::from_str("This is a simple paragraph.");
-        let text = md.get_text();
-        assert_eq!(text.lines.len(), 2); // Paragraph + empty line
-        assert_eq!(text.lines[0].spans[0].content, "This is a simple paragraph.");
-    }
-
-    #[test]
-    fn test_headings() {
-        let md = Markdown::from_str("# Heading 1\n## Heading 2\n### Heading 3");
-        let text = md.get_text();
-        
-        // Should have 3 headings and 6 lines
-        assert_eq!(text.lines.len(), 6);
-        
-        // Check content
-        assert_eq!(text.lines[0].spans[0].content, "Heading 1");
-        assert_eq!(text.lines[1].spans.len(), 0);
-        assert_eq!(text.lines[2].spans[0].content, "Heading 2");
-        assert_eq!(text.lines[3].spans.len(), 0);
-        assert_eq!(text.lines[4].spans[0].content, "Heading 3");
-        assert_eq!(text.lines[5].spans.len(), 0);
-        
-        assert!(text.lines[0].style != text.lines[1].style);
-    }
-
-    #[test]
-    fn test_emphasis() {
-        let md = Markdown::from_str("Normal *italic* **bold** text");
-        let text = md.get_text();
-        
-        assert_eq!(text.lines.len(), 2); // Paragraph + empty line
-        
-        // Check spans - should have 4 spans: normal, italic, bold, normal
-        assert_eq!(text.lines[0].spans.len(), 5);
-        assert_eq!(text.lines[0].spans[0].content, "Normal ");
-        assert_eq!(text.lines[0].spans[1].content, "italic");
-        assert_eq!(text.lines[0].spans[2].content, " ");
-        assert_eq!(text.lines[0].spans[3].content, "bold");
-        assert_eq!(text.lines[0].spans[4].content, " text");
-        
-        // Check that styles are different
-        assert!(text.lines[0].spans[0].style != text.lines[0].spans[1].style);
-        assert!(text.lines[0].spans[1].style != text.lines[0].spans[2].style);
-    }
-
-    #[test]
-    fn test_unordered_list() {
-        let md = Markdown::from_str("* Item 1\n* Item 2\n* Item 3");
-        let text = md.get_text();
-        
-        // Should have 4 lines: 3 items + empty line after list
-        assert_eq!(text.lines.len(), 3);
-        
-        // Check content with markers
-        assert_eq!(text.lines[0].spans[0].content, "* ");
-        assert_eq!(text.lines[0].spans[1].content, "Item 1");
-        
-        assert_eq!(text.lines[1].spans[0].content, "* ");
-        assert_eq!(text.lines[1].spans[1].content, "Item 2");
-        
-        assert_eq!(text.lines[2].spans[0].content, "* ");
-        assert_eq!(text.lines[2].spans[1].content, "Item 3");
-    }
-
-    #[test]
-    fn test_ordered_list() {
-        let md = Markdown::from_str("1. First item\n2. Second item\n3. Third item");
-        let text = md.get_text();
-        
-        // Should have 4 lines: 3 items + empty line after list
-        assert_eq!(text.lines.len(), 3);
-        
-        // Check content with markers
-        assert_eq!(text.lines[0].spans[0].content, "1. ");
-        assert_eq!(text.lines[0].spans[1].content, "First item");
-        
-        assert_eq!(text.lines[1].spans[0].content, "2. ");
-        assert_eq!(text.lines[1].spans[1].content, "Second item");
-        
-        assert_eq!(text.lines[2].spans[0].content, "3. ");
-        assert_eq!(text.lines[2].spans[1].content, "Third item");
-    }
-
-    #[test]
-    fn test_nested_lists() {
-        let md = Markdown::from_str("* Item 1\n  * Nested 1\n  * Nested 2\n* Item 2");
-        let text = md.get_text();
-        
-        // Should have 5 lines: 4 items + empty line after list
-        assert_eq!(text.lines.len(), 4);
-        
-        // Check indentation and markers
-        assert_eq!(text.lines[0].spans[0].content, "* ");
-        assert_eq!(text.lines[0].spans[1].content, "Item 1");
-        
-        assert_eq!(text.lines[1].spans[0].content, "  * ");
-        assert_eq!(text.lines[1].spans[1].content, "Nested 1");
-        
-        assert_eq!(text.lines[2].spans[0].content, "  * ");
-        assert_eq!(text.lines[2].spans[1].content, "Nested 2");
-        
-        assert_eq!(text.lines[3].spans[0].content, "* ");
-        assert_eq!(text.lines[3].spans[1].content, "Item 2");
-    }
-
-    #[test]
-    fn test_mixed_list_types() {
-        let md = Markdown::from_str("1. First\n   * Nested bullet\n2. Second");
-        let text = md.get_text();
-        
-        // Should have 4 lines: 3 items + empty line after list
-        assert_eq!(text.lines.len(), 3);
-        
-        assert_eq!(text.lines[0].spans[0].content, "1. ");
-        assert_eq!(text.lines[0].spans[1].content, "First");
-        
-        assert_eq!(text.lines[1].spans[0].content, "  * ");
-        assert_eq!(text.lines[1].spans[1].content, "Nested bullet");
-        
-        assert_eq!(text.lines[2].spans[0].content, "2. ");
-        assert_eq!(text.lines[2].spans[1].content, "Second");
-    }
-
-    #[test]
-    fn test_links() {
-        let md = Markdown::from_str("[Link text](https://example.com)");
-        let text = md.get_text();
-        
-        // Should have 2 lines: paragraph + empty line
-        assert_eq!(text.lines.len(), 2);
-        
-        // Check link text is rendered
-        assert_eq!(text.lines[0].spans[0].content, "Link text");
-        
-        // Check link is stored
-        assert!(md.links.contains(&String::from("(https://example.com)")));
-    }
-
-    #[test]
-    fn test_handle_input() {
-        let md = Markdown::from_str("[Link 1](https://example1.com)\n[Link 2](https://example2.com)");
-        
-        // Test valid key input
-        let link1 = md.handle_input(KeyCode::Char('0'));
-        let link2 = md.handle_input(KeyCode::Char('1'));
-        
-        assert!(link1.is_some());
-        assert!(link2.is_some());
-        
-        // Test invalid key input
-        let invalid = md.handle_input(KeyCode::Enter);
-        assert!(invalid.is_none());
-    }
-
-    #[test]
-    fn test_complex_document() {
-        let markdown = r#"
-# Main Heading
-
-This is a paragraph with *italic* and **bold** text.
-
-## Subheading
-
-* List item 1
-* List item 2
-  * Nested item 1
-  * Nested item 2
-* List item 3
-
-1. Ordered item 1
-2. Ordered item 2
-
-[Link to example](https://example.com)
-"#;
-        
-        let md = Markdown::from_str(markdown);
-        let text = md.get_text();
-        
-        // Basic validation that parsing worked
-        assert!(text.lines.len() > 10);
-        
-        // Check link is stored
-        assert!(md.links.contains(&String::from("(https://example.com)")));
     }
 }

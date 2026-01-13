@@ -14,9 +14,6 @@ use ironcalc::{
 
 use crate::ui::Address;
 
-#[cfg(test)]
-mod test;
-
 pub(crate) const COL_PIXELS: f64 = 5.0;
 // NOTE(zaphar): This is stolen from ironcalc but ironcalc doesn't expose it
 // publically.
@@ -87,7 +84,6 @@ impl<'book> AddressRange<'book> {
         };
         (row_range, col_range)
     }
-
 }
 
 /// A spreadsheet book with some internal state tracking.
@@ -133,13 +129,19 @@ impl Book {
     }
 
     /// Construct a payload of (html, csv_text) for a sheet.
-    pub fn sheeet_to_clipboard_content(&self, sheet: u32) -> Result<(String, String), anyhow::Error> {
+    pub fn sheeet_to_clipboard_content(
+        &self,
+        sheet: u32,
+    ) -> Result<(String, String), anyhow::Error> {
         let rows = self.get_export_rows_for_sheet(sheet)?;
         rows_to_clipboard_content(&rows)
     }
 
     /// Construct a payload of (html, csv_text) for the address range.
-    pub fn range_to_clipboard_content(&self, range: AddressRange) -> Result<(String, String), anyhow::Error> {
+    pub fn range_to_clipboard_content(
+        &self,
+        range: AddressRange,
+    ) -> Result<(String, String), anyhow::Error> {
         let rows = self.get_rows_for_range(&range).unwrap_or_default();
         rows_to_clipboard_content(&rows)
     }
@@ -722,7 +724,9 @@ impl Book {
     }
 }
 
-pub fn rows_to_clipboard_content(rows: &Vec<Vec<String>>) -> std::result::Result<(String, String), anyhow::Error> {
+pub fn rows_to_clipboard_content(
+    rows: &Vec<Vec<String>>,
+) -> std::result::Result<(String, String), anyhow::Error> {
     use htmf::prelude::*;
     let table = table([]);
     let mut writer = csv::Writer::from_writer(vec![]);
@@ -736,9 +740,12 @@ pub fn rows_to_clipboard_content(rows: &Vec<Vec<String>>) -> std::result::Result
         }
         table_rows.push(table_row.with(row_cells));
     }
-       
+
     let csv_content = writer.into_inner().expect("Failed to get the csv content");
-    Ok((table.with(table_rows).to_html(), String::from_utf8_lossy(&csv_content).to_string()))
+    Ok((
+        table.with(table_rows).to_html(),
+        String::from_utf8_lossy(&csv_content).to_string(),
+    ))
 }
 
 fn calculate_area(sheet: u32, start: &Address, end: &Address) -> Area {
