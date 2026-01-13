@@ -1,5 +1,4 @@
-//! Command mode command parsers.
-use slice_utils::{Measured, Peekable, Seekable, Span, StrCursor};
+use std::ops::Range;
 
 /// A parsed command entered in during command mode.
 #[derive(Debug, PartialEq, Eq)]
@@ -72,7 +71,7 @@ pub fn parse<'cmd, 'i: 'cmd>(input: &'i str) -> Result<Option<Cmd<'cmd>>, &'stat
 }
 
 fn compare<'i>(input: StrCursor<'i>, compare: &str) -> bool {
-    input.remaining() >= compare.len() && input.span(0..compare.len()) == compare
+    input.remaining() >= compare.len() && input.span_range(0..compare.len()) == compare
 }
 
 fn is_ws<'r, 'i: 'r>(input: &'r mut StrCursor<'i>) -> bool {
@@ -425,4 +424,43 @@ fn try_consume_usize<'cmd, 'i: 'cmd>(mut input: StrCursor<'i>) -> (Option<usize>
         return (Some(out.parse().unwrap()), input.clone());
     }
     (None, original_input)
+}
+
+#[derive(Clone)]
+struct StrCursor<'a> {
+    str: &'a str,
+    i: usize,
+}
+
+impl<'a> StrCursor<'a> {
+    fn new(str: &'a str) -> Self {
+        StrCursor { str, i: 0 }
+    }
+
+    fn take_rest(self) -> &'a str {
+        &self.str[self.i..]
+    }
+
+    fn span_range(&'a self, range: Range<usize>) -> &'a str {
+        &self.str[self.i + range.start..self.i + range.end]
+    }
+
+    fn remaining(&self) -> usize {
+        self.str.len() - self.i
+    }
+
+    fn peek_next(&self) -> Option<&u8> {
+        self.str.as_bytes().get(self.i)
+    }
+
+    fn next(&mut self) -> Option<&u8> {
+        let next = self.str.as_bytes().get(self.i);
+        self.i += 1;
+        next
+    }
+
+    /// advances cursor n steps
+    fn seek(&mut self, count: usize) {
+        self.i += count;
+    }
 }
