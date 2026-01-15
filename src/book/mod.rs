@@ -1,12 +1,12 @@
 use std::cmp::max;
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use ironcalc::{
     base::{
+        Model, UserModel,
         expressions::types::Area,
         types::{SheetData, Style, Worksheet},
         worksheet::WorksheetDimension,
-        Model, UserModel,
     },
     export::save_xlsx_to_writer,
     import::load_from_xlsx,
@@ -87,15 +87,15 @@ impl<'book> AddressRange<'book> {
 }
 
 /// A spreadsheet book with some internal state tracking.
-pub struct Book {
-    pub(crate) model: UserModel,
+pub struct Book<'a> {
+    pub(crate) model: UserModel<'a>,
     pub location: crate::ui::Address,
     pub dirty: bool,
 }
 
-impl Book {
+impl<'a> Book<'a> {
     /// Construct a new book from a Model
-    pub fn new(model: UserModel) -> Self {
+    pub fn from_user_model(model: UserModel<'a>) -> Self {
         Self {
             model,
             location: Address::default(),
@@ -103,8 +103,8 @@ impl Book {
         }
     }
 
-    pub fn from_model(model: Model) -> Self {
-        Self::new(UserModel::from_model(model))
+    pub fn from_model(model: Model<'a>) -> Self {
+        Self::from_user_model(UserModel::from_model(model))
     }
 
     /// Construct a new book from an xlsx file.
@@ -113,6 +113,7 @@ impl Book {
             path,
             "en",
             "America/New_York",
+            "en",
         )?))
     }
 
@@ -208,7 +209,7 @@ impl Book {
 
     /// Construct a new book from a path.
     pub fn new_from_xlsx_with_locale(path: &str, locale: &str, tz: &str) -> Result<Self> {
-        Ok(Self::from_model(load_from_xlsx(path, locale, tz)?))
+        Ok(Self::from_model(load_from_xlsx(path, locale, tz, "en")?))
     }
 
     /// Save a sheet in the book to a csv file
@@ -537,11 +538,10 @@ impl Book {
 
     /// Insert `count` rows at a `row_idx`.
     pub fn insert_rows(&mut self, row_idx: usize, count: usize) -> Result<()> {
-        for i in 0..count {
-            self.model
-                .insert_row(self.location.sheet, (row_idx + i) as i32)
-                .map_err(|e| anyhow!("Unable to insert row(s): {}", e))?;
-        }
+        self.model
+            .insert_rows(self.location.sheet, row_idx as i32, count as i32)
+            .map_err(|e| anyhow!("Unable to insert row(s): {}", e))?;
+
         if self.location.row >= row_idx {
             self.move_to(&Address {
                 sheet: self.location.sheet,
@@ -555,11 +555,10 @@ impl Book {
 
     /// Insert `count` columns at a `col_idx`.
     pub fn insert_columns(&mut self, col_idx: usize, count: usize) -> Result<()> {
-        for i in 0..count {
-            self.model
-                .insert_column(self.location.sheet, (col_idx + i) as i32)
-                .map_err(|e| anyhow!("Unable to insert column(s): {}", e))?;
-        }
+        self.model
+            .insert_columns(self.location.sheet, col_idx as i32, count as i32)
+            .map_err(|e| anyhow!("Unable to insert column(s): {}", e))?;
+
         if self.location.col >= col_idx {
             self.move_to(&Address {
                 sheet: self.location.sheet,
@@ -759,10 +758,11 @@ fn calculate_area(sheet: u32, start: &Address, end: &Address) -> Area {
     area
 }
 
-impl Default for Book {
+impl<'a> Default for Book<'a> {
     fn default() -> Self {
-        let mut book =
-            Book::new(UserModel::new_empty("default_name", "en", "America/New_York").unwrap());
+        let mut book = Book::from_user_model(
+            UserModel::new_empty("default_name", "en", "America/New_York", "en").unwrap(),
+        );
         book.update_cell(
             &Address {
                 sheet: 0,

@@ -31,7 +31,7 @@ pub struct ViewportState {
 /// A renderable viewport over a book.
 pub struct Viewport<'ws> {
     pub(crate) selected: Address,
-    book: &'ws Book,
+    book: &'ws Book<'ws>,
     range_selection: Option<&'ws RangeSelection>,
     block: Option<Block<'ws>>,
 }

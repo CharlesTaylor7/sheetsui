@@ -105,7 +105,7 @@ fn try_consume_write<'cmd, 'i: 'cmd>(
     if input.remaining() > 0 && !is_ws(&mut input) {
         return Err("Invalid command: Did you mean to type `write <path>`?");
     }
-    let arg = input.span(0..).trim();
+    let arg = input.take_rest().trim();
     return Ok(Some(Cmd::Write(if arg.is_empty() {
         None
     } else {
@@ -126,7 +126,7 @@ fn try_consume_export_csv<'cmd, 'i: 'cmd>(
     if input.remaining() == 0 || !is_ws(&mut input) {
         return Err("Invalid command: Did you mean to type `export <path>`?");
     }
-    let arg = input.span(0..).trim();
+    let arg = input.take_rest().trim();
     return Ok(Some(Cmd::ExportCsv(arg)));
 }
 
@@ -143,7 +143,7 @@ fn try_consume_new_sheet<'cmd, 'i: 'cmd>(
     if input.remaining() > 0 && !is_ws(&mut input) {
         return Err("Invalid command: Did you mean to type `new-sheet <arg>`?");
     }
-    let arg = input.span(0..).trim();
+    let arg = input.take_rest().trim();
     return Ok(Some(Cmd::NewSheet(if arg.is_empty() {
         None
     } else {
@@ -164,7 +164,7 @@ fn try_consume_select_sheet<'cmd, 'i: 'cmd>(
     if input.remaining() > 0 && !is_ws(&mut input) {
         return Err("Invalid command: Did you mean to type `select-sheet <sheet-name>`?");
     }
-    let arg = input.span(0..).trim();
+    let arg = input.take_rest().trim();
     if arg.is_empty() {
         return Err("Invalid command: Did you forget the sheet name? `select-sheet <sheet-name>`?");
     }
@@ -186,7 +186,7 @@ fn try_consume_color_cell<'cmd, 'i: 'cmd>(
     if input.remaining() > 0 && !is_ws(&mut input) {
         return Err("Invalid command: Did you mean to type `color-cell <color>`?");
     }
-    let arg = parse_color(input.span(0..).trim())?;
+    let arg = parse_color(input.take_rest().trim())?;
     return Ok(Some(Cmd::ColorCell(arg)));
 }
 
@@ -206,7 +206,7 @@ fn try_consume_insert_row<'cmd, 'i: 'cmd>(
     if input.remaining() > 0 && !is_ws(&mut input) {
         return Err("Invalid command: Did you mean to type `insert-rows <arg>`?");
     }
-    let arg = input.span(0..).trim();
+    let arg = input.take_rest().trim();
     return Ok(Some(Cmd::InsertRows(if arg.is_empty() {
         1
     } else {
@@ -234,7 +234,7 @@ fn try_consume_insert_column<'cmd, 'i: 'cmd>(
     if input.remaining() > 0 && !is_ws(&mut input) {
         return Err("Invalid command: Did you mean to type `insert-cols <arg>`?");
     }
-    let arg = input.span(0..).trim();
+    let arg = input.take_rest().trim();
     return Ok(Some(Cmd::InsertColumns(if arg.is_empty() {
         1
     } else {
@@ -262,7 +262,7 @@ fn try_consume_edit<'cmd, 'i: 'cmd>(
     if input.remaining() > 0 && !is_ws(&mut input) {
         return Err("Invalid command: Did you mean to type `edit <arg>`?");
     }
-    let arg = input.span(0..).trim();
+    let arg = input.take_rest().trim();
     return Ok(Some(Cmd::Edit(if arg.is_empty() {
         return Err("You must pass in a path to edit");
     } else {
@@ -287,7 +287,7 @@ fn try_consume_help<'cmd, 'i: 'cmd>(
     if input.remaining() > 0 && !is_ws(&mut input) {
         return Err("Invalid command: Did you mean to type `help <arg>`?");
     }
-    let arg = input.span(0..).trim();
+    let arg = input.take_rest().trim();
     return Ok(Some(Cmd::Help(if arg.is_empty() {
         None
     } else {
@@ -328,7 +328,7 @@ fn try_consume_rename_sheet<'cmd, 'i: 'cmd>(
         return Err("Invalid command: Did you mean to type `rename-sheet [idx] <new-name>`?");
     }
     let (idx, rest) = try_consume_usize(input.clone());
-    let arg = rest.span(0..).trim();
+    let arg = rest.take_rest().trim();
     if arg.is_empty() {
         return Err("Invalid command: `rename-sheet` requires a sheet name argument");
     }
@@ -348,7 +348,7 @@ fn try_consume_color_rows<'cmd, 'i: 'cmd>(
         return Err("Invalid command: Did you mean to type `color-rows [count] <color>`?");
     }
     let (idx, rest) = try_consume_usize(input.clone());
-    let arg = parse_color(rest.span(0..).trim())?;
+    let arg = parse_color(rest.take_rest().trim())?;
     return Ok(Some(Cmd::ColorRows(idx, arg)));
 }
 
@@ -365,7 +365,7 @@ fn try_consume_color_columns<'cmd, 'i: 'cmd>(
         return Err("Invalid command: Did you mean to type `color-columns [count] <color>`?");
     }
     let (idx, rest) = try_consume_usize(input.clone());
-    let arg = parse_color(rest.span(0..).trim())?;
+    let arg = parse_color(rest.take_rest().trim())?;
     return Ok(Some(Cmd::ColorColumns(idx, arg)));
 }
 

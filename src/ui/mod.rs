@@ -3,9 +3,9 @@ use std::{path::PathBuf, process::ExitCode, str::FromStr};
 
 use crate::book::{self, AddressRange, Book};
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
-use ironcalc::base::{expressions::types::Area, Model};
+use ironcalc::base::{Model, expressions::types::Area};
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Flex, Layout},
@@ -169,14 +169,14 @@ impl Default for Address {
 /// A workspace defining our UI state.
 pub struct Workspace<'ws> {
     name: PathBuf,
-    book: Book,
+    book: Book<'ws>,
     pub(crate) state: AppState<'ws>,
     text_area: TextArea<'ws>,
 }
 
 impl<'ws> Workspace<'ws> {
     /// Constructs a new Workspace from an `Book` with a path for the name.
-    pub fn new(book: Book, name: PathBuf) -> Self {
+    pub fn new(book: Book<'ws>, name: PathBuf) -> Self {
         let mut ws = Self {
             book,
             name,
@@ -187,9 +187,9 @@ impl<'ws> Workspace<'ws> {
         ws
     }
 
-    pub fn new_empty(locale: &str, tz: &str) -> Result<Self> {
+    pub fn new_empty<'a: 'ws>(locale: &'a str, tz: &'a str) -> Result<Self> {
         Ok(Self::new(
-            Book::from_model(Model::new_empty("", locale, tz).map_err(|e| anyhow!("{}", e))?),
+            Book::from_model(Model::new_empty("", locale, tz, "en").map_err(|e| anyhow!("{}", e))?),
             PathBuf::from_str("Untitled.xlsx").unwrap(),
         ))
     }
@@ -909,11 +909,7 @@ impl<'ws> Workspace<'ws> {
         address: &Address,
     ) -> Result<(), anyhow::Error> {
         let value = if let Some(b_val) = current_val {
-            if b_val {
-                "false"
-            } else {
-                "true"
-            }
+            if b_val { "false" } else { "true" }
         } else {
             "true"
         };
@@ -936,7 +932,7 @@ impl<'ws> Workspace<'ws> {
                 self.book.edit_current_cell(contents)?;
                 self.book.evaluate();
             }
-            Some(ClipboardContents::Range(ref rows)) => {
+            Some(ClipboardContents::Range(rows)) => {
                 let Address { sheet, row, col } = self.book.location.clone();
                 let row_len = rows.len();
                 for ri in 0..row_len {
@@ -1092,7 +1088,7 @@ impl<'ws> Workspace<'ws> {
     }
 }
 
-fn load_book(path: &PathBuf, locale: &str, tz: &str) -> Result<Book, anyhow::Error> {
+fn load_book<'a>(path: &PathBuf, locale: &str, tz: &str) -> Result<Book<'a>, anyhow::Error> {
     let book = if path.exists() {
         Book::new_from_xlsx_with_locale(&path.to_string_lossy().to_string(), locale, tz)?
     } else {
